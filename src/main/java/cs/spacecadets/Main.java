@@ -9,8 +9,14 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 public class Main {
+    private final static int IMAGES = 6;
+    private final static int WIDTH = 320;
+    private final static int HEIGHT = 240;
+    private final static int OFFSET = 30;
+    
     public static void main(String[] args) {
         Webcam camera = Webcam.getDefault();
+        camera.setViewSize(new Dimension(WIDTH,HEIGHT));
         camera.open();
 
         JFrame frame = new JFrame("Circle Detector");

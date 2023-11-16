@@ -14,7 +14,7 @@ public class GuiPanel extends JLabel {
     
     public void showImage(BufferedImage image) {
         BufferedImage imgGraphics = switch (operator) {
-            case 1 -> new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+            case 1 -> greyscale(image);
             case 2 -> sobel(image, 0);
             case 3 -> sobel(image, 1);
             case 4 -> sobel(image, 2);
@@ -22,6 +22,16 @@ public class GuiPanel extends JLabel {
         };
         ImageIcon icon = new ImageIcon(imgGraphics);
         this.setIcon(icon);
+    }
+    
+    private BufferedImage greyscale(BufferedImage image) {
+        BufferedImage newImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        for(int x=0; x<image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) { //(x,y) is the co-ordinates of the pixel in the image we are looking at
+                newImage.setRGB(x,y,image.getRGB(x,y));
+            }
+        }
+        return newImage;
     }
     
     private BufferedImage sobel(BufferedImage image, int axis) {
@@ -83,20 +93,23 @@ public class GuiPanel extends JLabel {
         return map;
     }
     
-    private int getGradientMagnitude(int redX, int redY) {
-        int greenX = redX%(256)-redX;
-        int blueX = redX%(256*256)-greenX-redX;
-        int alphaX = redX%(256*256*256)-blueX-greenX-redX;
+    private int getGradientMagnitude(int x, int y) {
+        int redX = x%256;
+        int greenX = x%(256*256)-redX;
+        int blueX = x%(256*256*256)-greenX-redX;
+        int alphaX = x-blueX-greenX-redX;
+
+        int redY = y%256;
+        int greenY = y%(256*256)-redY;
+        int blueY = y%(256*256*256)-greenY-redY;
+        int alphaY = y-blueY-greenY-redY;
         
-        int greenY = redY%(256)-redY;
-        int blueY = redY%(256*256)-greenY-redY;
-        int alphaY = redY%(256*256*256)-blueY-greenY-redY;
-        
-        int finalRed = (int) Math.sqrt(Math.pow(redX, 2) + Math.pow(redY, 2));
+        int finalRed = (int) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         int finalGreen = (int) Math.sqrt(Math.pow(greenX, 2) + Math.pow(greenY, 2));
         int finalBlue = (int) Math.sqrt(Math.pow(blueX, 2) + Math.pow(blueY, 2));
         int finalAlpha = (int) Math.sqrt(Math.pow(alphaX, 2) + Math.pow(alphaY, 2));
 
+        System.out.println(finalRed+finalGreen+finalBlue+finalAlpha);
         return finalRed+finalGreen+finalBlue+finalAlpha;
     }
 }
