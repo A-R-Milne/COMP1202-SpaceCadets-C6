@@ -15,9 +15,9 @@ public class GuiPanel extends JLabel {
     public void showImage(BufferedImage image) {
         BufferedImage imgGraphics = switch (operator) {
             case 1 -> greyscale(image);
-            case 2 -> sobel(image, 0);
-            case 3 -> sobel(image, 1);
-            case 4 -> sobel(image, 2);
+            case 2 -> sobel(greyscale(image), 0);
+            case 3 -> sobel(greyscale(image), 1);
+            case 4 -> sobel(greyscale(image), 2);
             default -> image;
         };
         ImageIcon icon = new ImageIcon(imgGraphics);
@@ -36,7 +36,7 @@ public class GuiPanel extends JLabel {
     
     private BufferedImage sobel(BufferedImage image, int axis) {
         HashMap<Integer,Integer> xMap1 = makeMap(1,2,1);
-        HashMap<Integer,Integer> xMap2 = makeMap(1,0,-1);
+        HashMap<Integer,Integer> xMap2 = makeMap(-1,0,1);
         HashMap<Integer,Integer> yMap1 = makeMap(1,0,-1);
         HashMap<Integer,Integer> yMap2 = makeMap(1,2,1);
         
@@ -46,7 +46,7 @@ public class GuiPanel extends JLabel {
         int finalA;
         int finalB;
         
-        BufferedImage newImage = new BufferedImage(image.getWidth(),image.getHeight(),BufferedImage.TYPE_INT_ARGB);
+        BufferedImage newImage = new BufferedImage(image.getWidth(),image.getHeight(),BufferedImage.TYPE_INT_RGB);
         
         for(int x=0; x<image.getWidth(); x++) {
             for(int y=0; y<image.getHeight(); y++) { //(x,y) is the co-ordinates of the pixel in the image we are looking at
@@ -65,10 +65,10 @@ public class GuiPanel extends JLabel {
                             finalB = Math.min(b + y, image.getHeight()-1); //Extend image vertically 1 pixel on each side
                         }
                         if (axis == 0 || axis == 2) {
-                            xVal += (image.getRGB(finalA, finalB) * xMap1.get(a + 1) * xMap2.get(b + 1));
+                            xVal += getABGR(image,a,b,finalA,finalB,xMap1,xMap2);
                         } //Sobel operator on x
                         if (axis == 1 || axis == 2) {
-                            yVal += (image.getRGB(finalA, finalB) * yMap1.get(a + 1) * yMap2.get(b + 1));
+                            yVal += getABGR(image,a,b,finalA,finalB,yMap1,yMap2);
                         } //Sobel operator on y
                     }
                 }
@@ -93,23 +93,32 @@ public class GuiPanel extends JLabel {
         return map;
     }
     
-    private int getGradientMagnitude(int x, int y) {
-        int redX = x%256;
-        int greenX = x%(256*256)-redX;
-        int blueX = x%(256*256*256)-greenX-redX;
-        int alphaX = x-blueX-greenX-redX;
-
-        int redY = y%256;
-        int greenY = y%(256*256)-redY;
-        int blueY = y%(256*256*256)-greenY-redY;
-        int alphaY = y-blueY-greenY-redY;
+    private int getABGR(BufferedImage image, int a, int b, int x, int y, HashMap<Integer,Integer> map1, HashMap<Integer,Integer> map2) {
+        int abgr = image.getRGB(x, y);
+        int red = abgr&0xff;
+        int green = (abgr>>8)&0xff;
+        int blue = (abgr>>16)&0xff;
         
-        int finalRed = (int) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+        red*=(map1.get(1-a) * map2.get(1-b));
+        green*=(map1.get(1-a) * map2.get(1-b));
+        blue*=(map1.get(1-a) * map2.get(1-b));
+        
+        return (red)+(green<<8)+(blue<<16);
+    }
+    
+    private int getGradientMagnitude(int x, int y) {
+        int redX = x&0xff;
+        int greenX = (x>>8)&0xff;
+        int blueX = (x>>16)&0xff;
+
+        int redY = y&0xff;
+        int greenY = (y>>8)&0xff;
+        int blueY = (y>>16)&0xff;
+        
+        int finalRed = (int) Math.sqrt(Math.pow(redX, 2) + Math.pow(redY, 2));
         int finalGreen = (int) Math.sqrt(Math.pow(greenX, 2) + Math.pow(greenY, 2));
         int finalBlue = (int) Math.sqrt(Math.pow(blueX, 2) + Math.pow(blueY, 2));
-        int finalAlpha = (int) Math.sqrt(Math.pow(alphaX, 2) + Math.pow(alphaY, 2));
-
-        System.out.println(finalRed+finalGreen+finalBlue+finalAlpha);
-        return finalRed+finalGreen+finalBlue+finalAlpha;
+        
+        return (finalRed)+(finalGreen<<8)+(finalBlue<<16);
     }
 }
